@@ -2,7 +2,7 @@ import { useState } from "react";
 
 // ⚠️ IMPORTANTE: Reemplazar esta URL con la URL de tu Google Apps Script
 // (ver guía paso a paso para obtenerla)
-const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxfcj-1olENduH1SVqqo4I3w_Ul-SxyTLbsudQ_1DR0a5hV7RTG32dlkachQJQ_3gAfJw/exec";
+const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby7GSJXi_HXGwaX6aWn1361ZBm-SbZ90xACquNWRuljUWtM5b5QNefwX3YWaIdwE1fr3g/exec";
 
 const PRIMARY = "#005060";
 const SECONDARY = "#007A6E";
