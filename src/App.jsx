@@ -1,4 +1,8 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
+
+// ⚠️ IMPORTANTE: Reemplazar esta URL con la URL de tu Google Apps Script
+// (ver guía paso a paso para obtenerla)
+const GOOGLE_SCRIPT_URL = "PEGAR_TU_URL_AQUI";
 
 const PRIMARY = "#005060";
 const SECONDARY = "#007A6E";
@@ -6,19 +10,6 @@ const ACCENT = "#E6F2F0";
 const BORDER = "#7DBDB5";
 const LABEL = "#3D6B65";
 const BG = "#F7FAFA";
-
-const LOGO_URL = "data:image/svg+xml," + encodeURIComponent(`
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 58">
-  <rect x="0" y="0" width="56" height="58" rx="4" fill="${PRIMARY}"/>
-  <text x="28" y="22" text-anchor="middle" fill="white" font-family="Arial" font-weight="bold" font-size="11">nc</text>
-  <line x1="8" y1="28" x2="48" y2="28" stroke="${BORDER}" stroke-width="1.5"/>
-  <line x1="10" y1="32" x2="46" y2="32" stroke="${BORDER}" stroke-width="1.2"/>
-  <line x1="12" y1="36" x2="44" y2="36" stroke="${BORDER}" stroke-width="1"/>
-  <line x1="14" y1="40" x2="42" y2="40" stroke="${BORDER}" stroke-width="0.8"/>
-  <line x1="16" y1="44" x2="40" y2="44" stroke="${BORDER}" stroke-width="0.6"/>
-  <text x="64" y="30" fill="${PRIMARY}" font-family="Arial" font-weight="900" font-size="24" letter-spacing="1">NET-LOG</text>
-  <text x="64" y="48" fill="${SECONDARY}" font-family="Arial" font-weight="600" font-size="10" letter-spacing="2.5">MUD LOGGING SERVICE</text>
-</svg>`);
 
 function Field({ label, value, onChange, type = "text", required, half, options, placeholder }) {
   const base = {
@@ -195,6 +186,8 @@ export default function NetLogForm() {
   });
   const [works, setWorks] = useState([emptyWork()]);
   const [submitted, setSubmitted] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState("");
 
   const updatePersonal = (k, v) => setPersonal(p => ({ ...p, [k]: v }));
   const updatePhysical = (k, v) => setPhysical(p => ({ ...p, [k]: v }));
@@ -211,9 +204,31 @@ export default function NetLogForm() {
 
   const tabs = ["Datos Personales", "Datos Físicos", "Datos Laborales"];
 
-  const handleSubmit = () => {
-    setSubmitted(true);
-    setTimeout(() => setSubmitted(false), 4000);
+  const handleSubmit = async () => {
+    if (!personal.apellido || !personal.dni || !personal.email || !personal.telefono) {
+      setSendError("Por favor completá los campos obligatorios: Apellido y Nombre, DNI, Email y Teléfono.");
+      setTimeout(() => setSendError(""), 5000);
+      return;
+    }
+
+    setSending(true);
+    setSendError("");
+
+    const payload = { personal, addresses, physical, general, laboral, works };
+
+    try {
+      await fetch(GOOGLE_SCRIPT_URL, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      setSubmitted(true);
+    } catch (err) {
+      setSendError("Error al enviar. Verificá tu conexión e intentá de nuevo.");
+    } finally {
+      setSending(false);
+    }
   };
 
   if (submitted) {
@@ -392,6 +407,17 @@ export default function NetLogForm() {
           )}
         </div>
 
+        {/* Error message */}
+        {sendError && (
+          <div style={{
+            background: "#FFF0F0", border: "1px solid #FFB0B0", borderRadius: 10,
+            padding: "12px 18px", marginBottom: 12, color: "#CC0000", fontSize: 13,
+            fontFamily: "'Nunito Sans', sans-serif"
+          }}>
+            ⚠️ {sendError}
+          </div>
+        )}
+
         {/* Navigation */}
         <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
           {tab > 0 && (
@@ -414,13 +440,14 @@ export default function NetLogForm() {
               Siguiente →
             </button>
           ) : (
-            <button onClick={handleSubmit} style={{
+            <button onClick={handleSubmit} disabled={sending} style={{
               padding: "12px 32px", borderRadius: 10, border: "none",
-              background: PRIMARY, color: "white", fontWeight: 800, fontSize: 14,
-              cursor: "pointer", fontFamily: "'Nunito Sans', sans-serif",
-              boxShadow: "0 4px 12px rgba(0,80,96,0.3)", letterSpacing: 0.5
+              background: sending ? "#888" : PRIMARY, color: "white", fontWeight: 800, fontSize: 14,
+              cursor: sending ? "wait" : "pointer", fontFamily: "'Nunito Sans', sans-serif",
+              boxShadow: "0 4px 12px rgba(0,80,96,0.3)", letterSpacing: 0.5,
+              opacity: sending ? 0.7 : 1
             }}>
-              ✓ Enviar formulario
+              {sending ? "⏳ Enviando..." : "✓ Enviar formulario"}
             </button>
           )}
         </div>
