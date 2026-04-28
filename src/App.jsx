@@ -2,7 +2,7 @@ import { useState } from "react";
 
 // ⚠️ IMPORTANTE: Reemplazar esta URL con la URL de tu Google Apps Script
 // (ver guía paso a paso para obtenerla)
-const GOOGLE_SCRIPT_URL = "PEGAR_TU_URL_AQUI";
+const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxfcj-1olENduH1SVqqo4I3w_Ul-SxyTLbsudQ_1DR0a5hV7RTG32dlkachQJQ_3gAfJw/exec";
 
 const PRIMARY = "#005060";
 const SECONDARY = "#007A6E";
@@ -159,6 +159,62 @@ function TabButton({ active, label, onClick }) {
   );
 }
 
+const ciudadesPorProvincia = {
+  "Buenos Aires": ["La Plata", "Mar del Plata", "Bahía Blanca", "Tandil", "Quilmes", "Lanús", "Lomas de Zamora", "Avellaneda", "San Isidro", "Tigre", "Pilar", "Morón", "Merlo", "Moreno", "San Martín", "Tres de Febrero", "Vicente López", "San Fernando", "Zárate", "Campana", "Luján", "Junín", "Pergamino", "Olavarría", "Necochea", "Otra"],
+  "CABA": ["CABA"],
+  "Catamarca": ["San Fernando del Valle de Catamarca", "Otra"],
+  "Chaco": ["Resistencia", "Presidencia Roque Sáenz Peña", "Otra"],
+  "Chubut": ["Rawson", "Comodoro Rivadavia", "Trelew", "Puerto Madryn", "Esquel", "Otra"],
+  "Córdoba": ["Córdoba", "Villa Carlos Paz", "Río Cuarto", "Villa María", "San Francisco", "Alta Gracia", "Jesús María", "Bell Ville", "Río Tercero", "Villa Allende", "La Calera", "Cosquín", "Carlos Paz", "Unquillo", "Otra"],
+  "Corrientes": ["Corrientes", "Goya", "Otra"],
+  "Entre Ríos": ["Paraná", "Concordia", "Gualeguaychú", "Otra"],
+  "Formosa": ["Formosa", "Clorinda", "Otra"],
+  "Jujuy": ["San Salvador de Jujuy", "Palpalá", "Otra"],
+  "La Pampa": ["Santa Rosa", "General Pico", "Otra"],
+  "La Rioja": ["La Rioja", "Chilecito", "Otra"],
+  "Mendoza": ["Mendoza", "San Rafael", "Godoy Cruz", "Las Heras", "Luján de Cuyo", "Maipú", "Otra"],
+  "Misiones": ["Posadas", "Oberá", "Eldorado", "Otra"],
+  "Neuquén": ["Neuquén", "San Martín de los Andes", "Zapala", "Otra"],
+  "Río Negro": ["Viedma", "San Carlos de Bariloche", "General Roca", "Cipolletti", "Otra"],
+  "Salta": ["Salta", "San Ramón de la Nueva Orán", "Tartagal", "Otra"],
+  "San Juan": ["San Juan", "Rawson", "Otra"],
+  "San Luis": ["San Luis", "Villa Mercedes", "Merlo", "Otra"],
+  "Santa Cruz": ["Río Gallegos", "Caleta Olivia", "Otra"],
+  "Santa Fe": ["Santa Fe", "Rosario", "Rafaela", "Venado Tuerto", "Reconquista", "Otra"],
+  "Santiago del Estero": ["Santiago del Estero", "La Banda", "Otra"],
+  "Tierra del Fuego": ["Ushuaia", "Río Grande", "Otra"],
+  "Tucumán": ["San Miguel de Tucumán", "Yerba Buena", "Tafí Viejo", "Otra"],
+};
+
+function FileUpload({ label, fileState, onFileChange }) {
+  const inputStyle = {
+    display: "none",
+  };
+  const fileName = fileState ? fileState.name : null;
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", width: "100%" }}>
+      <label style={{
+        display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 14px",
+        background: ACCENT, border: `1.5px solid ${BORDER}`, borderRadius: 6,
+        color: SECONDARY, fontSize: 12, fontWeight: 700, cursor: "pointer",
+        fontFamily: "'Nunito Sans', sans-serif", whiteSpace: "nowrap",
+      }}>
+        📎 Elegir archivo
+        <input type="file" accept=".pdf,.jpg,.jpeg,.png" style={inputStyle}
+          onChange={e => { if (e.target.files[0]) onFileChange(e.target.files[0]); }} />
+      </label>
+      <span style={{ fontSize: 13, color: fileName ? PRIMARY : "#999", fontFamily: "'Nunito Sans', sans-serif" }}>
+        {fileName || label}
+      </span>
+      {fileName && (
+        <button onClick={() => onFileChange(null)} style={{
+          background: "none", border: "none", color: "#c0392b", cursor: "pointer", fontSize: 14, fontWeight: 700
+        }}>×</button>
+      )}
+    </div>
+  );
+}
+
 const emptyAddr = () => ({ tipo: "", calle: "", nro: "", piso: "", dpto: "", barrio: "", cp: "", localidad: "", provincia: "" });
 const emptyWork = () => ({ empresa: "", tareas: "", desde: "", hasta: "", motivo: "" });
 
@@ -185,6 +241,7 @@ export default function NetLogForm() {
     universitario: "", uniTitulo: "", observaciones: "", otroTrabajo: ""
   });
   const [works, setWorks] = useState([emptyWork()]);
+  const [files, setFiles] = useState({ foto: null, dni: null, carnet: null, cuv: null, titulo: null, cv: null });
   const [submitted, setSubmitted] = useState(false);
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState("");
@@ -214,7 +271,12 @@ export default function NetLogForm() {
     setSending(true);
     setSendError("");
 
-    const payload = { personal, addresses, physical, general, laboral, works };
+    const fileNames = {};
+    Object.entries(files).forEach(([key, file]) => {
+      if (file) fileNames[key] = file.name;
+    });
+
+    const payload = { personal, addresses, physical, general, laboral, works, archivos: fileNames };
 
     try {
       await fetch(GOOGLE_SCRIPT_URL, {
@@ -291,10 +353,12 @@ export default function NetLogForm() {
                 <Field label="Nacionalidad" value={personal.nacionalidad} onChange={v => updatePersonal("nacionalidad", v)} half />
                 <Field label="Estado Civil" value={personal.estadoCivil} onChange={v => updatePersonal("estadoCivil", v)} half
                   options={["Soltero/a", "Casado/a", "Divorciado/a", "Viudo/a", "Unión convivencial"]} />
-                <Field label="Ciudad" value={personal.ciudad} onChange={v => updatePersonal("ciudad", v)} half />
-                <Field label="Provincia" value={personal.provincia} onChange={v => updatePersonal("provincia", v)} half />
+                <Field label="Provincia" value={personal.provincia} onChange={v => { updatePersonal("provincia", v); updatePersonal("ciudad", ""); }} half
+                  options={["Buenos Aires", "CABA", "Catamarca", "Chaco", "Chubut", "Córdoba", "Corrientes", "Entre Ríos", "Formosa", "Jujuy", "La Pampa", "La Rioja", "Mendoza", "Misiones", "Neuquén", "Río Negro", "Salta", "San Juan", "San Luis", "Santa Cruz", "Santa Fe", "Santiago del Estero", "Tierra del Fuego", "Tucumán"]} />
+                <Field label="Ciudad" value={personal.ciudad} onChange={v => updatePersonal("ciudad", v)} half
+                  options={personal.provincia ? (ciudadesPorProvincia[personal.provincia] || []) : undefined} />
                 <Field label="País" value={personal.pais} onChange={v => updatePersonal("pais", v)} half />
-                <Field label="Teléfono" value={personal.telefono} onChange={v => updatePersonal("telefono", v)} half />
+                <Field label="Teléfono" value={personal.telefono} onChange={v => updatePersonal("telefono", v)} half required />
                 <Field label="E-mail personal" value={personal.email} onChange={v => updatePersonal("email", v)} type="email" required />
               </Section>
               <Section title="CONTACTO DE EMERGENCIA">
@@ -385,14 +449,16 @@ export default function NetLogForm() {
                 <Field label="¿Posee otro trabajo o actividad comercial actualmente?" value={laboral.otroTrabajo} onChange={v => updateLaboral("otroTrabajo", v)} />
               </Section>
               <Section title="DOCUMENTACIÓN ADJUNTA">
-                <div style={{ width: "100%", fontSize: 13, color: LABEL, lineHeight: 2 }}>
-                  {["Foto 4x4", "Copia de DNI (frente y dorso)", "Copia de carnet de conducir",
-                    "Carnet Unificado de Vacunación (CUV)", "Copia de título", "CV actualizado"
-                  ].map(item => (
-                    <div key={item} style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      <input type="checkbox" style={{ accentColor: SECONDARY }} /> {item}
-                    </div>
-                  ))}
+                <div style={{ width: "100%", fontSize: 13, color: LABEL }}>
+                  <FileUpload label="Foto 4x4 (JPG/PNG)" fileState={files.foto} onFileChange={f => setFiles(p => ({...p, foto: f}))} />
+                  <FileUpload label="Copia de DNI frente y dorso (PDF/JPG)" fileState={files.dni} onFileChange={f => setFiles(p => ({...p, dni: f}))} />
+                  <FileUpload label="Copia de carnet de conducir (PDF/JPG)" fileState={files.carnet} onFileChange={f => setFiles(p => ({...p, carnet: f}))} />
+                  <FileUpload label="Carnet Unificado de Vacunación - CUV (PDF/JPG)" fileState={files.cuv} onFileChange={f => setFiles(p => ({...p, cuv: f}))} />
+                  <FileUpload label="Copia de título (PDF/JPG)" fileState={files.titulo} onFileChange={f => setFiles(p => ({...p, titulo: f}))} />
+                  <FileUpload label="CV actualizado (PDF)" fileState={files.cv} onFileChange={f => setFiles(p => ({...p, cv: f}))} />
+                </div>
+                <div style={{ width: "100%", background: ACCENT, borderRadius: 8, padding: "10px 14px", fontSize: 12, color: LABEL, lineHeight: 1.5, marginTop: 8 }}>
+                  📄 Formatos aceptados: PDF, JPG, PNG. Tamaño máximo por archivo: 10 MB.
                 </div>
               </Section>
               <div style={{
