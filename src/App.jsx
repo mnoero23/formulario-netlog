@@ -2,7 +2,7 @@ import { useState } from "react";
 
 // ⚠️ IMPORTANTE: Reemplazar esta URL con la URL de tu Google Apps Script
 // (ver guía paso a paso para obtenerla)
-const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwww7jgRM9w_VQ_Mn6QjXOiZWlhw6oSWnyMucK-XPj4Z_rs2EiGr7JMvrfZ39AhtAg8QA/exec";
+const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxfcj-1olENduH1SVqqo4I3w_Ul-SxyTLbsudQ_1DR0a5hV7RTG32dlkachQJQ_3gAfJw/exec";
 
 const PRIMARY = "#005060";
 const SECONDARY = "#007A6E";
@@ -241,7 +241,6 @@ export default function NetLogForm() {
     universitario: "", uniTitulo: "", observaciones: "", otroTrabajo: ""
   });
   const [works, setWorks] = useState([emptyWork()]);
-  const [files, setFiles] = useState({ foto: null, dni: null, carnet: null, cuv: null, titulo: null, cv: null });
   const [submitted, setSubmitted] = useState(false);
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState("");
@@ -271,12 +270,7 @@ export default function NetLogForm() {
     setSending(true);
     setSendError("");
 
-    const fileNames = {};
-    Object.entries(files).forEach(([key, file]) => {
-      if (file) fileNames[key] = file.name;
-    });
-
-    const payload = { personal, addresses, physical, general, laboral, works, archivos: fileNames };
+    const payload = { personal, addresses, physical, general, laboral, works };
 
     try {
       await fetch(GOOGLE_SCRIPT_URL, {
@@ -293,14 +287,49 @@ export default function NetLogForm() {
     }
   };
 
+  // Generar URL de la carpeta de Drive basada en el nombre
+  const driveSearchUrl = `https://drive.google.com/drive/search?q=${encodeURIComponent((personal.apellido || "") + " - " + (personal.dni || ""))}`;
+
   if (submitted) {
     return (
       <div style={{ fontFamily: "'Nunito Sans', sans-serif", background: BG, minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
         <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
-        <div style={{ textAlign: "center", padding: 40 }}>
+        <div style={{ textAlign: "center", padding: 40, maxWidth: 600 }}>
           <div style={{ fontSize: 60, marginBottom: 16 }}>✅</div>
           <h2 style={{ color: PRIMARY, margin: "0 0 8px" }}>Formulario enviado correctamente</h2>
-          <p style={{ color: LABEL, fontSize: 14 }}>Los datos han sido registrados. RRHH revisará la información.</p>
+          <p style={{ color: LABEL, fontSize: 14, marginBottom: 24 }}>Los datos han sido registrados. RRHH revisará la información.</p>
+          
+          <div style={{
+            background: "white", borderRadius: 14, padding: "24px 28px", textAlign: "left",
+            border: `2px solid ${SECONDARY}`, boxShadow: "0 4px 16px rgba(0,80,96,0.1)"
+          }}>
+            <h3 style={{ color: PRIMARY, fontSize: 16, margin: "0 0 12px", fontWeight: 800 }}>
+              📁 Paso final: Subí tu documentación
+            </h3>
+            <p style={{ color: LABEL, fontSize: 13, lineHeight: 1.6, margin: "0 0 16px" }}>
+              Se creó una carpeta personal en Google Drive con tu nombre. Hacé clic en el botón de abajo para abrirla y subí los siguientes documentos:
+            </p>
+            <div style={{ fontSize: 13, color: PRIMARY, lineHeight: 2.2, marginBottom: 16 }}>
+              <div>☐ Foto 4x4</div>
+              <div>☐ Copia de DNI (frente y dorso)</div>
+              <div>☐ Copia de carnet de conducir</div>
+              <div>☐ Carnet Unificado de Vacunación (CUV)</div>
+              <div>☐ Copia de título</div>
+              <div>☐ CV actualizado</div>
+            </div>
+            <a href={driveSearchUrl} target="_blank" rel="noopener noreferrer" style={{
+              display: "inline-flex", alignItems: "center", gap: 8,
+              padding: "14px 28px", borderRadius: 10, background: SECONDARY, color: "white",
+              fontWeight: 800, fontSize: 15, textDecoration: "none",
+              fontFamily: "'Nunito Sans', sans-serif",
+              boxShadow: "0 4px 12px rgba(0,122,110,0.3)"
+            }}>
+              📂 Abrir mi carpeta en Google Drive
+            </a>
+            <p style={{ color: "#999", fontSize: 11, marginTop: 12 }}>
+              Formatos aceptados: PDF, JPG, PNG
+            </p>
+          </div>
         </div>
       </div>
     );
@@ -449,16 +478,21 @@ export default function NetLogForm() {
                 <Field label="¿Posee otro trabajo o actividad comercial actualmente?" value={laboral.otroTrabajo} onChange={v => updateLaboral("otroTrabajo", v)} />
               </Section>
               <Section title="DOCUMENTACIÓN ADJUNTA">
-                <div style={{ width: "100%", fontSize: 13, color: LABEL }}>
-                  <FileUpload label="Foto 4x4 (JPG/PNG)" fileState={files.foto} onFileChange={f => setFiles(p => ({...p, foto: f}))} />
-                  <FileUpload label="Copia de DNI frente y dorso (PDF/JPG)" fileState={files.dni} onFileChange={f => setFiles(p => ({...p, dni: f}))} />
-                  <FileUpload label="Copia de carnet de conducir (PDF/JPG)" fileState={files.carnet} onFileChange={f => setFiles(p => ({...p, carnet: f}))} />
-                  <FileUpload label="Carnet Unificado de Vacunación - CUV (PDF/JPG)" fileState={files.cuv} onFileChange={f => setFiles(p => ({...p, cuv: f}))} />
-                  <FileUpload label="Copia de título (PDF/JPG)" fileState={files.titulo} onFileChange={f => setFiles(p => ({...p, titulo: f}))} />
-                  <FileUpload label="CV actualizado (PDF)" fileState={files.cv} onFileChange={f => setFiles(p => ({...p, cv: f}))} />
-                </div>
-                <div style={{ width: "100%", background: ACCENT, borderRadius: 8, padding: "10px 14px", fontSize: 12, color: LABEL, lineHeight: 1.5, marginTop: 8 }}>
-                  📄 Formatos aceptados: PDF, JPG, PNG. Tamaño máximo por archivo: 10 MB.
+                <div style={{ width: "100%", background: ACCENT, borderRadius: 10, padding: "16px 20px", lineHeight: 1.8 }}>
+                  <p style={{ fontSize: 13, color: PRIMARY, fontWeight: 700, margin: "0 0 8px" }}>
+                    📁 Al enviar el formulario se creará una carpeta en Google Drive con tu nombre donde deberás subir:
+                  </p>
+                  <div style={{ fontSize: 13, color: LABEL, paddingLeft: 8 }}>
+                    <div>• Foto 4x4</div>
+                    <div>• Copia de DNI (frente y dorso)</div>
+                    <div>• Copia de carnet de conducir</div>
+                    <div>• Carnet Unificado de Vacunación (CUV)</div>
+                    <div>• Copia de título</div>
+                    <div>• CV actualizado</div>
+                  </div>
+                  <p style={{ fontSize: 12, color: "#888", margin: "10px 0 0", fontStyle: "italic" }}>
+                    Formatos aceptados: PDF, JPG, PNG. Después de enviar el formulario vas a ver el botón para abrir tu carpeta.
+                  </p>
                 </div>
               </Section>
               <div style={{
