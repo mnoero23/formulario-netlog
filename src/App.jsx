@@ -2,7 +2,7 @@ import { useState } from "react";
 
 // ⚠️ IMPORTANTE: Reemplazar esta URL con la URL de tu Google Apps Script
 // (ver guía paso a paso para obtenerla)
-const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby7GSJXi_HXGwaX6aWn1361ZBm-SbZ90xACquNWRuljUWtM5b5QNefwX3YWaIdwE1fr3g/exec";
+const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxfcj-1olENduH1SVqqo4I3w_Ul-SxyTLbsudQ_1DR0a5hV7RTG32dlkachQJQ_3gAfJw/exec";
 
 const PRIMARY = "#005060";
 const SECONDARY = "#007A6E";
@@ -11,12 +11,16 @@ const BORDER = "#7DBDB5";
 const LABEL = "#3D6B65";
 const BG = "#F7FAFA";
 
-function Field({ label, value, onChange, type = "text", required, half, options, placeholder }) {
+function Field({ label, value, onChange, type = "text", required, half, options, placeholder, uppercase }) {
   const base = {
     width: "100%", padding: "10px 12px", border: `1.5px solid ${BORDER}`,
     borderRadius: 6, fontSize: 14, fontFamily: "'Nunito Sans', sans-serif",
     color: PRIMARY, background: "white", outline: "none", transition: "border-color 0.2s",
     boxSizing: "border-box",
+    ...(uppercase ? { textTransform: "uppercase" } : {}),
+  };
+  const handleChange = (val) => {
+    onChange(uppercase ? val.toUpperCase() : val);
   };
   return (
     <div style={{ flex: half ? "1 1 48%" : "1 1 100%", minWidth: half ? 200 : "auto", marginBottom: 14 }}>
@@ -24,15 +28,15 @@ function Field({ label, value, onChange, type = "text", required, half, options,
         {label} {required && <span style={{ color: "#c0392b" }}>*</span>}
       </label>
       {options ? (
-        <select value={value} onChange={e => onChange(e.target.value)} style={{ ...base, cursor: "pointer" }}>
+        <select value={value} onChange={e => handleChange(e.target.value)} style={{ ...base, cursor: "pointer", textTransform: "none" }}>
           <option value="">Seleccionar...</option>
           {options.map(o => <option key={o} value={o}>{o}</option>)}
         </select>
       ) : type === "textarea" ? (
-        <textarea value={value} onChange={e => onChange(e.target.value)} rows={3}
+        <textarea value={value} onChange={e => handleChange(e.target.value)} rows={3}
           placeholder={placeholder} style={{ ...base, resize: "vertical" }} />
       ) : (
-        <input type={type} value={value} onChange={e => onChange(e.target.value)}
+        <input type={type} value={value} onChange={e => handleChange(e.target.value)}
           placeholder={placeholder} style={base}
           onFocus={e => e.target.style.borderColor = SECONDARY}
           onBlur={e => e.target.style.borderColor = BORDER} />
@@ -223,7 +227,7 @@ export default function NetLogForm() {
   const [personal, setPersonal] = useState({
     apellido: "", nombre: "", dni: "", cuil: "", fechaNac: "", nacionalidad: "Argentina",
     estadoCivil: "", ciudad: "", provincia: "", pais: "Argentina", telefono: "", email: "",
-    conyugeNombre: "", conyugeTel: "", hijos: "", emergenciaTel: "", emergenciaVinculo: ""
+    conyugeNombre: "", conyugeTel: "", hijos: "", emergenciaNombre: "", emergenciaTel: "", emergenciaVinculo: ""
   });
   const [addresses, setAddresses] = useState([emptyAddr()]);
   const [physical, setPhysical] = useState({
@@ -329,6 +333,18 @@ export default function NetLogForm() {
             <p style={{ color: "#999", fontSize: 11, marginTop: 12 }}>
               Formatos aceptados: PDF, JPG, PNG
             </p>
+            <div style={{
+              marginTop: 16, padding: "14px 18px", background: "#FFF8E1",
+              borderRadius: 8, borderLeft: `4px solid #F0A000`
+            }}>
+              <p style={{ fontSize: 13, color: "#6D4C00", margin: 0, lineHeight: 1.6 }}>
+                <strong>¿No tenés cuenta de Google?</strong> Enviá toda la documentación por correo electrónico a{" "}
+                <a href="mailto:rrhh@net-log.com.ar?subject=Documentación%20personal" style={{ color: "#B07000", fontWeight: 700 }}>
+                  rrhh@net-log.com.ar
+                </a>{" "}
+                indicando tu nombre completo y DNI en el asunto del mail. Es importante que envíes todos los documentos listados arriba.
+              </p>
+            </div>
           </div>
         </div>
       </div>
@@ -375,7 +391,7 @@ export default function NetLogForm() {
           {tab === 0 && (
             <>
               <Section title="DATOS PERSONALES">
-                <Field label="Apellido y Nombre" value={personal.apellido} onChange={v => updatePersonal("apellido", v)} required />
+                <Field label="Apellido y Nombre" value={personal.apellido} onChange={v => updatePersonal("apellido", v)} required uppercase />
                 <Field label="DNI" value={personal.dni} onChange={v => updatePersonal("dni", v)} half required />
                 <Field label="C.U.I.L." value={personal.cuil} onChange={v => updatePersonal("cuil", v)} half />
                 <Field label="Fecha de Nacimiento" value={personal.fechaNac} onChange={v => updatePersonal("fechaNac", v)} type="date" half required />
@@ -389,13 +405,15 @@ export default function NetLogForm() {
                 <Field label="País" value={personal.pais} onChange={v => updatePersonal("pais", v)} half />
                 <Field label="Teléfono" value={personal.telefono} onChange={v => updatePersonal("telefono", v)} half required />
                 <Field label="E-mail personal" value={personal.email} onChange={v => updatePersonal("email", v)} type="email" required />
+                <Field label="Nombre de la pareja" value={personal.conyugeNombre} onChange={v => updatePersonal("conyugeNombre", v)} half />
+                <Field label="Teléfono de la pareja" value={personal.conyugeTel} onChange={v => updatePersonal("conyugeTel", v)} half />
+                <Field label="Cantidad de Hijos" value={personal.hijos} onChange={v => updatePersonal("hijos", v)} half />
               </Section>
               <Section title="CONTACTO DE EMERGENCIA">
-                <Field label="Nombre del Cónyuge" value={personal.conyugeNombre} onChange={v => updatePersonal("conyugeNombre", v)} half />
-                <Field label="Teléfono Cónyuge" value={personal.conyugeTel} onChange={v => updatePersonal("conyugeTel", v)} half />
-                <Field label="Cantidad de Hijos" value={personal.hijos} onChange={v => updatePersonal("hijos", v)} half />
-                <Field label="Teléfono familiar cercano" value={personal.emergenciaTel} onChange={v => updatePersonal("emergenciaTel", v)} half required />
-                <Field label="Vínculo" value={personal.emergenciaVinculo} onChange={v => updatePersonal("emergenciaVinculo", v)} half />
+                <Field label="Nombre del contacto" value={personal.emergenciaNombre} onChange={v => updatePersonal("emergenciaNombre", v)} half required />
+                <Field label="Teléfono" value={personal.emergenciaTel} onChange={v => updatePersonal("emergenciaTel", v)} half required />
+                <Field label="Vínculo" value={personal.emergenciaVinculo} onChange={v => updatePersonal("emergenciaVinculo", v)} half
+                  options={["Padre/Madre", "Hermano/a", "Hijo/a", "Pareja", "Amigo/a", "Otro"]} />
               </Section>
               <Section title="DOMICILIOS">
                 {addresses.map((a, i) => (
