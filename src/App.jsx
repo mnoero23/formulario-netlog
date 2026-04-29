@@ -291,8 +291,8 @@ export default function NetLogForm() {
     }
   };
 
-  // Generar URL de la carpeta de Drive basada en el nombre
-  const driveSearchUrl = `https://drive.google.com/drive/search?q=${encodeURIComponent((personal.apellido || "") + " - " + (personal.dni || ""))}`;
+  // URL directa a la carpeta compartida de documentación
+  const driveFolderUrl = "https://drive.google.com/drive/folders/16zmMuBcKLWHew1c-ZyDeQEopevTR8EhO";
 
   if (submitted) {
     return (
@@ -311,7 +311,7 @@ export default function NetLogForm() {
               📁 Paso final: Subí tu documentación
             </h3>
             <p style={{ color: LABEL, fontSize: 13, lineHeight: 1.6, margin: "0 0 16px" }}>
-              Se creó una carpeta personal en Google Drive con tu nombre. Hacé clic en el botón de abajo para abrirla y subí los siguientes documentos:
+              Hacé clic en el botón de abajo para abrir la carpeta de documentación en Google Drive. Buscá la subcarpeta con tu nombre y subí los siguientes documentos:
             </p>
             <div style={{ fontSize: 13, color: PRIMARY, lineHeight: 2.2, marginBottom: 16 }}>
               <div>☐ Foto 4x4</div>
@@ -321,14 +321,14 @@ export default function NetLogForm() {
               <div>☐ Copia de título</div>
               <div>☐ CV actualizado</div>
             </div>
-            <a href={driveSearchUrl} target="_blank" rel="noopener noreferrer" style={{
+            <a href={driveFolderUrl} target="_blank" rel="noopener noreferrer" style={{
               display: "inline-flex", alignItems: "center", gap: 8,
               padding: "14px 28px", borderRadius: 10, background: SECONDARY, color: "white",
               fontWeight: 800, fontSize: 15, textDecoration: "none",
               fontFamily: "'Nunito Sans', sans-serif",
               boxShadow: "0 4px 12px rgba(0,122,110,0.3)"
             }}>
-              📂 Abrir mi carpeta en Google Drive
+              📂 Abrir carpeta de documentación
             </a>
             <p style={{ color: "#999", fontSize: 11, marginTop: 12 }}>
               Formatos aceptados: PDF, JPG, PNG
